@@ -4,11 +4,14 @@ requirements and resources/
 .venv/
 .env
 t.py
+t.ipynb
 error.txt
 cookies/
 .pytest_cache/
 *.exe
 *.zip
+client.txt
+
 
 
 # Byte-compiled / optimized / DLL files

@@ -1,36 +1,38 @@
 import traceback
-from dotenv import load_dotenv
-import time
+from datetime import datetime
 import os
+import pandas as pd
 
-
-from modules.scraper import Scraper
+from modules.euronext import Euronext
 from modules import files as fs
-
-load_dotenv()
 
 
 def main():
-    start_time = time.time()
-    
-    d = Scraper()
+    print('Program is Started at {}'.format(datetime.now()))
+    index_file = 'files/SBF_120_Index.xlsx'
+    snapshot_file = 'files/SBF_120_Snapshot.xlsx'
+
     try:
-        if d.setup_driver(headless=False, profile = os.getenv('chrome_profile')):
-            d.get_page('https://www.google.com/')
-            d.element_send_keys('Who is lionel messi?', selector='textarea[name="q"]')
-            
-            print('Chrome is ready')
-        
-        
-            input('Exit? Press ENTER: ')
+        euronext = Euronext()
+
+        # Get SBF 120 index composition
+        if not os.path.exists(index_file):
+            print('Updating SBF 120 Index Composition...')
+            SBF_120 = 'https://live.euronext.com/popout-page/getIndexComposition/FR0003999481-XPAR'
+            items = euronext.get_index_composition(SBF_120)
+            fs.write_to_sheet(pd.DataFrame(items), index_file)
+
+        # Snapshot scheduler
+        df = fs.read_sheet(index_file)
+        euronext.snapshot_scheduler(df, snapshot_file)
+        del euronext
+
     except Exception:
         traceback.print_exc()
+        fs.write_to_txt(traceback.format_exc(), 'error.txt') 
     finally:
-        print('\nExecution time: {} min'.format(
-            round((time.time() - start_time)/60, 2)))
-        del d
+        print('Program Ends.')
 
-        
 
 if __name__ == '__main__':
     main()
