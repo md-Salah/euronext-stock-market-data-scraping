@@ -11,9 +11,10 @@ def main():
     print('Program is Started at {}'.format(datetime.now()))
     index_file = 'files/SBF_120_Index.xlsx'
     snapshot_file = 'files/SBF_120_Snapshot.xlsx'
+    agg_file = 'files/SBF_120_Aggregated_trend.xlsx'
 
     try:
-        euronext = Euronext()
+        euronext = Euronext(agg_file)
 
         # Get SBF 120 index composition
         if not os.path.exists(index_file):

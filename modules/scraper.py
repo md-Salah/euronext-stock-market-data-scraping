@@ -39,9 +39,9 @@ class SeleniumWrap:
             pass
 
     # Setup driver with best practice options
-    def setup_driver(self, headless: bool = True, profile: Optional[str] = None, proxy: Optional[str] = None) -> webdriver.Chrome:
+    def setup_driver(self, headless: bool = True, profile: Optional[str] = None, proxy: Optional[str] = None, driver_path: str = '') -> webdriver.Chrome:
         options = Options()
-        service = Service()
+        service = Service(driver_path)
 
         if headless:
             options.add_argument('--headless=new')

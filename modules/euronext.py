@@ -5,15 +5,27 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 import pandas as pd
 import time
-import collections
+from datetime import datetime
+import pytz
 
 from modules.scraper import SeleniumWrap
 from modules import files as fs
 
 class Euronext:
-    def __init__(self) -> None:
+    def __init__(self, agg_file) -> None:
         self.market_open = True
-        pass
+        
+        self.agg_file = agg_file
+        self.agg_df = pd.DataFrame(columns=['Timestamp', 'Aggregated Trend'])
+        
+        self.col_map = {f'{i}m': f'{i + 1}m' for i in range(1, 720)}
+
+    def time_now(self, timezone='CET') -> str:
+        utc_time = pytz.timezone('UTC').localize(datetime.utcnow())
+        cet_time = utc_time.astimezone(pytz.timezone(timezone))
+
+        return cet_time.strftime("%d %b %Y - %H:%M %Z")        
+
 
     def get_index_composition(self, url: str) -> list[dict]:
         se = SeleniumWrap()
@@ -102,8 +114,7 @@ class Euronext:
             del df['720m']
 
         # Shift columns by 1 minute
-        new_col = {f'{i}m': f'{i + 1}m' for i in range(1, 720)}
-        df.rename(columns=new_col, inplace=True)
+        df.rename(columns=self.col_map, inplace=True)
 
         return df
 
@@ -149,14 +160,11 @@ class Euronext:
     def calculate_trend(self, row: pd.Series) -> int:
         trend = 0
 
-        prices = row[2:].values
-        count = collections.Counter(prices)
-        max_price = max(prices)
-        min_price = min(prices)
+        prices = row[2:].values.tolist()
 
-        if max_price in prices[-5:] and count[max_price] == 1: # Higher high
+        if max(prices) not in prices[:-5]:
             trend = 1
-        elif min_price in prices[-5:] and count[min_price] == 1: # Lower low
+        elif min(prices) not in prices[:-5]:
             trend = -1
         
         return trend
@@ -170,5 +178,10 @@ class Euronext:
         df.loc['Total', '1m'] = 'Aggregated Trend'
         df.loc['Total', 'TREND'] = 0
         df.loc['Total', 'TREND'] = df['TREND'].sum()
+        
+        
+        # Aggregated trend
+        self.agg_df.loc[len(self.agg_df)] = [self.time_now(), df.loc['Total', 'TREND']]
+        fs.write_to_sheet(self.agg_df, self.agg_file)
         
         return df
