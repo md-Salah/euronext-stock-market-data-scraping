@@ -26,7 +26,7 @@ class Euronext:
 
     def get_index_composition(self, url: str) -> list[dict]:
         se = SeleniumWrap()
-        driver = se.setup_driver(headless=False)
+        driver = se.setup_driver(headless=True, driver_path='chromedriver.exe')
         assert driver is not None, 'Driver not found'
 
         items = []

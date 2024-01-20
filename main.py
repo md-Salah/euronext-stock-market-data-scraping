@@ -10,6 +10,8 @@ def main():
     index_file = 'files/SBF_120_Index.xlsx'
     snapshot_file = 'files/SBF_120_Snapshot.xlsx'
     agg_file = 'files/SBF_120_Aggregated_trend.xlsx'
+    if not os.path.exists('files/'):
+        os.mkdir('files/')
 
     try:
         euronext = Euronext(agg_file)
@@ -17,7 +19,7 @@ def main():
 
         # Get SBF 120 index composition
         if not os.path.exists(index_file):
-            print('Updating SBF 120 Index Composition...')
+            print('\nUpdating SBF 120 Index Composition...')
             SBF_120 = 'https://live.euronext.com/popout-page/getIndexComposition/FR0003999481-XPAR'
             items = euronext.get_index_composition(SBF_120)
             fs.write_to_sheet(pd.DataFrame(items), index_file)
