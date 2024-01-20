@@ -2,7 +2,6 @@ import requests
 from requests.exceptions import ConnectionError, ReadTimeout
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional
 import pandas as pd
 import time
 from datetime import datetime
@@ -21,8 +20,6 @@ class Euronext:
         if len(self.agg_df) == 0:
             self.agg_df = pd.DataFrame(columns=['Timestamp', 'Aggregated Trend'])
         
-        self.col_map = {f'{i}m': f'{i + 1}m' for i in range(1, 720)}
-
     def time_now(self) -> str:
         utc_time = pytz.timezone('UTC').localize(datetime.utcnow())
         return utc_time.strftime("%d %b %Y - %H:%M %Z")        
@@ -55,7 +52,7 @@ class Euronext:
         del se
         return items
 
-    def get_last_trade_price(self, ISIN: str) -> Optional[float]:
+    def get_last_trade_price(self, ISIN: str) -> float:
         for _ in range(3):  # Try 3 times if failed
             try:
                 url = "https://live.euronext.com/en/ajax/getDetailedQuote/{}".format(
@@ -96,21 +93,28 @@ class Euronext:
 
             except ValueError:
                 print('Value error', ISIN)
-                return None
+                return 0
             except AssertionError as e:
                 print(e, ISIN)
             except (ConnectionError, ReadTimeout):
                 pass
             except Exception as err:
                 print(err.__class__, ISIN)
+        return 0
 
     def shift_by_1_minute(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Delete the last column '720th min' if exists
-        if '720m' in df.columns:
-            del df['720m']
 
         # Shift columns by 1 minute
-        df.rename(columns=self.col_map, inplace=True)
+        col_map ={}
+        for col in df.columns[2:]:
+            if '720m' in col: # Delete the last column '720th min' if exists
+                del df[col]
+                continue
+    
+            int_value = int(col.split('m')[0])
+            col_map[col] = col.replace(str(int_value), str(int_value + 1))
+        
+        df.rename(columns=col_map, inplace=True)
 
         return df
 
@@ -122,7 +126,8 @@ class Euronext:
             prices = list(executor.map(
                 self.get_last_trade_price, df['ISIN'].tolist()))
 
-            df['1m'] = prices
+            self._1m = '1m ({})'.format(self.time_now())
+            df[self._1m] = prices
         return df
 
     def snapshot_scheduler(self, df: pd.DataFrame, snapshot_file: str, force_open: bool = False) -> None:
@@ -172,7 +177,7 @@ class Euronext:
         df['TREND'] = df.apply(self.calculate_trend, axis=1)
 
         df.loc['Total'] = ''
-        df.loc['Total', '1m'] = 'Aggregated Trend'
+        df.loc['Total', self._1m] = 'Aggregated Trend'
         df.loc['Total', 'TREND'] = 0
         df.loc['Total', 'TREND'] = df['TREND'].sum()
         
