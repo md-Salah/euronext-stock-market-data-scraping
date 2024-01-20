@@ -8,13 +8,13 @@ from modules import files as fs
 
 
 def main():
-    print('Program is Started at {}'.format(datetime.now()))
     index_file = 'files/SBF_120_Index.xlsx'
     snapshot_file = 'files/SBF_120_Snapshot.xlsx'
     agg_file = 'files/SBF_120_Aggregated_trend.xlsx'
 
     try:
         euronext = Euronext(agg_file)
+        print('Program is Started at UTC: {}'.format(euronext.time_now()))
 
         # Get SBF 120 index composition
         if not os.path.exists(index_file):
@@ -23,9 +23,13 @@ def main():
             items = euronext.get_index_composition(SBF_120)
             fs.write_to_sheet(pd.DataFrame(items), index_file)
 
+        # Read snapshot file
+        df = fs.read_sheet(snapshot_file)
+        df = df[[col for col in df.columns if 'TREND' not in col]]
+        df = fs.read_sheet(index_file) if len(df) == 0 else df[:-1:]
+        
         # Snapshot scheduler
-        df = fs.read_sheet(index_file)
-        euronext.snapshot_scheduler(df, snapshot_file)
+        euronext.snapshot_scheduler(df, snapshot_file, True)
         del euronext
 
     except Exception:

@@ -22,14 +22,14 @@ def write_to_txt(data:str, filename:str='output.txt') -> None:
         traceback.print_exc()
 
 
-def read_sheet(filename:str, dtype: Optional[dict]=None) -> pd.DataFrame:
+def read_sheet(filename:str, dtype: Optional[dict]=None, index_col=None) -> pd.DataFrame:
     df = pd.DataFrame()
     
     try:
         if filename.endswith('.csv'):
             df = pd.read_csv(filename, dtype=dtype)
         elif filename.endswith('.xlsx'):
-            df = pd.read_excel(filename, dtype=dtype)
+            df = pd.read_excel(filename, dtype=dtype, index_col=index_col)
         else:
             print('File type not supported "{}"'.format(filename))
     except FileNotFoundError:

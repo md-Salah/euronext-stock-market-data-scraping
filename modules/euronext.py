@@ -14,18 +14,18 @@ from modules import files as fs
 class Euronext:
     def __init__(self, agg_file) -> None:
         self.market_open = True
-        
+    
+        # Read aggregated trend file 
         self.agg_file = agg_file
-        self.agg_df = pd.DataFrame(columns=['Timestamp', 'Aggregated Trend'])
+        self.agg_df = fs.read_sheet(agg_file)
+        if len(self.agg_df) == 0:
+            self.agg_df = pd.DataFrame(columns=['Timestamp', 'Aggregated Trend'])
         
         self.col_map = {f'{i}m': f'{i + 1}m' for i in range(1, 720)}
 
-    def time_now(self, timezone='CET') -> str:
+    def time_now(self) -> str:
         utc_time = pytz.timezone('UTC').localize(datetime.utcnow())
-        cet_time = utc_time.astimezone(pytz.timezone(timezone))
-
-        return cet_time.strftime("%d %b %Y - %H:%M %Z")        
-
+        return utc_time.strftime("%d %b %Y - %H:%M %Z")        
 
     def get_index_composition(self, url: str) -> list[dict]:
         se = SeleniumWrap()
@@ -90,11 +90,7 @@ class Euronext:
                 
                 # Check if the market is open
                 status_tag = soup.select_one('#instrstatusl1')
-                if status_tag is None:
-                    self.market_open = False
-                    return None
-                self.market_open = (status_tag.text.strip()
-                                    == 'CONTINUOUS TRADING')
+                self.market_open = (status_tag.text.strip() == 'CONTINUOUS TRADING') if status_tag else False
 
                 return round(float(price_tag.text.strip().replace(',', '')), 2)
 
@@ -151,8 +147,9 @@ class Euronext:
                 print('Sleeping for {} Seconds...'.format(remaining_time))
                 time.sleep(remaining_time)
             else:
-                print('Sleeping for 1 hour...')
-                time.sleep(3600)
+                print('Sleeping for 10 min...')
+                time.sleep(10*60)
+                self.get_last_trade_price(df['ISIN'][0])
 
             print('')
 
@@ -162,11 +159,16 @@ class Euronext:
 
         prices = row[2:].values.tolist()
 
-        if max(prices) not in prices[:-5]:
-            trend = 1
-        elif min(prices) not in prices[:-5]:
-            trend = -1
-        
+        try:
+            if max(prices) not in prices[:-5]:
+                trend = 1
+            elif min(prices) not in prices[:-5]:
+                trend = -1
+        except:
+            for i in range(len(prices)):
+                print(i, prices[i], type(prices[i]))
+
+            exit()
         return trend
 
 
