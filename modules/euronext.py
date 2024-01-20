@@ -159,16 +159,11 @@ class Euronext:
 
         prices = row[2:].values.tolist()
 
-        try:
-            if max(prices) not in prices[:-5]:
-                trend = 1
-            elif min(prices) not in prices[:-5]:
-                trend = -1
-        except:
-            for i in range(len(prices)):
-                print(i, prices[i], type(prices[i]))
-
-            exit()
+        if max(prices) not in prices[:-5]:
+            trend = 1
+        elif min(prices) not in prices[:-5]:
+            trend = -1
+        
         return trend
 
 
