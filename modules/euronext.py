@@ -22,7 +22,7 @@ class Euronext:
         
     def time_now(self) -> str:
         utc_time = pytz.timezone('UTC').localize(datetime.utcnow())
-        return utc_time.strftime("%d %b %Y - %H:%M %Z")        
+        return utc_time.strftime("%d %b - %H:%M %Z")        
 
     def get_index_composition(self, url: str) -> list[dict]:
         se = SeleniumWrap()
