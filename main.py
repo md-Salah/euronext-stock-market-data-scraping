@@ -30,7 +30,7 @@ def main():
         df = fs.read_sheet(index_file) if len(df) == 0 else df[:-1:]
         
         # Snapshot scheduler
-        euronext.snapshot_scheduler(df, snapshot_file, True)
+        euronext.snapshot_scheduler(df, snapshot_file)
         del euronext
 
     except Exception:

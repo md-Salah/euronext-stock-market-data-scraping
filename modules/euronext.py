@@ -112,7 +112,7 @@ class Euronext:
                 continue
     
             int_value = int(col.split('m')[0])
-            col_map[col] = col.replace(str(int_value), str(int_value + 1))
+            col_map[col] = col.replace(str(int_value) + 'm', str(int_value + 1) + 'm')
         
         df.rename(columns=col_map, inplace=True)
 
@@ -127,7 +127,9 @@ class Euronext:
                 self.get_last_trade_price, df['ISIN'].tolist()))
 
             self._1m = '1m ({})'.format(self.time_now())
-            df[self._1m] = prices
+            
+            new_df = pd.DataFrame({self._1m: prices}, index=df.index)
+            df = pd.concat([df, new_df], axis=1)
         return df
 
     def snapshot_scheduler(self, df: pd.DataFrame, snapshot_file: str, force_open: bool = False) -> None:
