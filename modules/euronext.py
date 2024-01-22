@@ -134,6 +134,7 @@ class Euronext:
 
     def snapshot_scheduler(self, df: pd.DataFrame, snapshot_file: str, force_open: bool = False) -> None:
         count = 0
+        # Checking market status
         self.get_last_trade_price(df['ISIN'][0])
         print('Market is Open.' if self.market_open else 'Market is Closed.')
 
@@ -154,8 +155,8 @@ class Euronext:
                 print('Sleeping for {} Seconds...'.format(remaining_time))
                 time.sleep(remaining_time)
             else:
-                print('Sleeping for 10 min...')
-                time.sleep(10*60)
+                print('Sleeping for 1 min...')
+                time.sleep(60)
                 self.get_last_trade_price(df['ISIN'][0])
 
             print('')
